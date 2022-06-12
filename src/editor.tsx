@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import EditorJS, { LogLevels } from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import CustomImage from "./image";
+import { useReactToPrint } from "react-to-print";
 
 const DEFAULT_INITIAL_DATA = () => {
 	return {
@@ -12,23 +13,34 @@ const DEFAULT_INITIAL_DATA = () => {
 };
 
 const EDITTOR_HOLDER_ID = "editorjs";
+let instance: any;
 
 const Editor: React.FC = (_: any) => {
 	const ejInstance = useRef<any>(null);
 	const [editorData, setEditorData] = React.useState(DEFAULT_INITIAL_DATA);
 	const render = useRef(0);
+	const [print, setPrintState] = useState(false);
+	const component = useRef(null);
+
+	const printHandler = useReactToPrint({
+		content: () => component.current,
+		onAfterPrint: () => {
+			(document.querySelector(".ce-toolbar") as any).style.display = "";
+			setPrintState(false);
+		},
+	});
 
 	// This will run only once
 	useEffect(() => {
 		if (!ejInstance.current && render.current === 0) {
-			initEditor();
+			instance = initEditor();
+		}
+		if (print) {
+			(document.querySelector(".ce-toolbar") as any).style.display = "none";
+			instance.save().then((data: any) => printHandler());
 		}
 		render.current += 1;
-		return () => {
-			ejInstance.current?.destroy();
-			ejInstance.current = null;
-		};
-	}, []);
+	}, [print]);
 
 	const initEditor = () => {
 		const editor = new EditorJS({
@@ -58,11 +70,14 @@ const Editor: React.FC = (_: any) => {
 				},
 			},
 		});
+
+		return editor;
 	};
 
 	return (
 		<React.Fragment>
-			<div id={EDITTOR_HOLDER_ID} style={{ textAlign: "left" }}></div>
+			<div id={EDITTOR_HOLDER_ID} style={{ textAlign: "left" }} ref={component}></div>
+			<button onClick={() => setPrintState(true)}>Print</button>
 		</React.Fragment>
 	);
 };

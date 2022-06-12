@@ -4,8 +4,8 @@ import ReactDOM from "react-dom";
 import Resizer from "react-image-file-resizer";
 
 interface ResizableAndRotatableImageProps {
-	data: Record<string, any>;
-	onDataChange: (newData: Record<string, any>) => void;
+	data: { originalImage: File };
+	onDataChange: (newData: { originalImage: File; events?: any[] }) => void;
 	images: string[];
 	imageScale: number;
 	rotation: number;
@@ -34,7 +34,6 @@ function ResizableAndRotatableImage(props: ResizableAndRotatableImageProps) {
 		});
 
 	useEffect(() => {
-		console.log(props.rotation);
 		imageSelected &&
 			resizeFile(imageSelected)
 				.then((data) => {
@@ -45,9 +44,14 @@ function ResizableAndRotatableImage(props: ResizableAndRotatableImageProps) {
 
 	useEffect(() => {
 		displayImage &&
-			props.onDataChange({
-				originalImage: displayImage,
-			});
+			fetch(displayImage)
+				.then((data) => data.blob())
+				.then((blob) => new File([blob], "new-file.png"))
+				.then((file) => {
+					props.onDataChange({
+						originalImage: file,
+					});
+				});
 	}, [displayImage]);
 
 	return imageSelected ? (

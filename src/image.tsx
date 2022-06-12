@@ -6,16 +6,14 @@ import ResizableAndRotatableImage from "./imageSelection";
 import Resizer from "react-image-file-resizer";
 
 export default class CustomImage {
-	public data: Record<string, any>;
+	public data: { originalImage: File; events?: any[] };
 	public config: Record<string, any>;
 	public nodes: Record<string, any>;
 	public CSS: { wrapper: string };
 	public settings: any[];
 
-	constructor({ data, config }: { data: Record<string, any>; config: Record<string, any> }) {
-		this.data = {
-			events: data.events || [],
-		};
+	constructor({ data, config }: { data: { originalImage: File; events?: any[] }; config: Record<string, any> }) {
+		this.data = data;
 		this.config = { imageScale: 50, rotation: 0, ...config };
 		this.nodes = {
 			holder: null,
@@ -71,12 +69,6 @@ export default class CustomImage {
 		};
 	}
 
-	reRender(rotation: number) {
-		this.config.rotation = rotation;
-		// this.render();
-		console.log(rotation);
-	}
-
 	render() {
 		const rootNode = document.createElement("div");
 		rootNode.setAttribute("class", this.CSS.wrapper);
@@ -113,35 +105,29 @@ export default class CustomImage {
 
 			button.addEventListener("click", () => {
 				this._toggleTune(tune.name);
-				console.log(tune.name);
 			});
 		});
 
 		return wrapper;
 	}
 
-	_resizeOrRotateImage(image: string) {
-		return fetch(image)
-			.then((data) => data.blob())
-			.then((blob) => new File([blob], "new-file.png"))
-			.then((file) => {
-				return new Promise((resolve) => {
-					Resizer.imageFileResizer(
-						file,
-						300 * (this.config.imageScale / 100 + 0.5),
-						300 * (this.config.imageScale / 100 + 0.5),
-						"PNG",
-						100,
-						this.config.rotation,
-						(uri) => {
-							resolve(uri);
-						},
-						"file",
-						300 * (this.config.imageScale / 100 + 0.5),
-						300 * (this.config.imageScale / 100 + 0.5)
-					);
-				});
-			});
+	_resizeOrRotateImage(image: File) {
+		return new Promise((resolve) => {
+			Resizer.imageFileResizer(
+				image,
+				300 * (this.config.imageScale / 100 + 0.5),
+				300 * (this.config.imageScale / 100 + 0.5),
+				"PNG",
+				100,
+				this.config.rotation,
+				(uri) => {
+					resolve(uri);
+				},
+				"file",
+				300 * (this.config.imageScale / 100 + 0.5),
+				300 * (this.config.imageScale / 100 + 0.5)
+			);
+		});
 	}
 
 	_toggleTune(tune: string) {
@@ -159,7 +145,6 @@ export default class CustomImage {
 				});
 				break;
 		}
-		console.log(this.config.rotation);
 	}
 
 	save() {
